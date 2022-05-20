@@ -1,25 +1,24 @@
-import register from './handlers/register'
-
 export default class InputMask {
 
 	constructor({ el, mask, char }) {
+		this.enableHandlers(el)
+		
+		
 		this.initValue = ''
-		this._value = ''
-		this._caret = {
+		this._value 	= ''
+		this._caret 	= {
 			start: 0,
 			end: 0,
 			min: null,
 			max: null,
 		}
 		
-		this.mask = mask
-		this.char = char
-		this.type = null
-		this.node = null
+		this.mask 		= mask
+		this.char 		= char
+		this.type 		= null
+		this.node		= null
 		
 		this.isMask = this.isMaskUsed(mask, char)
-
-		this.enableHandlers(el)
 	}
 
 	get caret() {
@@ -28,10 +27,6 @@ export default class InputMask {
 
 	get value() {
 		return this._value
-	}
-
-	set value(val) {
-		this._value = val
 	}
 
 	/**
@@ -156,6 +151,23 @@ export default class InputMask {
 		return type
 	}
 	
+	// defineMaskType() {
+	// 	const pattern = new RegExp(`[^${this.char}]`, 'g')
+	// 		, chars = this.mask.replace(pattern, '')
+		
+	// 	switch (chars.length) {
+	// 		case 10: return 'phone'
+		
+	// 		default: {
+	// 			console.warn(
+	// 				'[InputMask]: Указанного шаблона маски в данный момент не существует'
+	// 			)
+
+	// 			return null
+	// 		}
+	// 	}
+	// }
+
 	/**
 	 * Вернет минимальный шаг для каретки
 	 * @returns Number
@@ -171,7 +183,7 @@ export default class InputMask {
 	 */
 
 	defineMaxLength() {
-		return this.mask.lastIndexOf(this.char) + 1
+		return this.mask.length
 	}
 
 	/**
@@ -199,8 +211,94 @@ export default class InputMask {
 			this.initValue = value
 			this.update({ value })
 
-			register.call(this, node)
+			node.addEventListener('input', this.input.bind(this))
+			node.addEventListener('keydown', this.keydown.bind(this))
+			node.addEventListener('mouseup', this.mouseup.bind(this))
+			node.addEventListener('mousedown', this.mousedown.bind(this))
 		})
+	}
+
+	/**
+	 * Обработчик - ввод данных
+	 * @param { Object } $event 
+	 */
+
+	input({ target }) {
+		this.update({
+			value: target.value,
+			end: target.selectionEnd,
+			start: target.selectionStart
+		})
+	}
+	
+	/**
+	 * Обработчик - кнопка нажата
+	 * @param { Object } $event 
+	 */
+
+	keydown({ target, code }) {
+		let {
+			start, end
+		} = this._caret
+		const { value } = target
+			, 	ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+			,	isArrow = ARROWS.includes(code)
+
+		if (isArrow) {
+			switch (code) {
+				case 'ArrowUp': end = start = 0
+					break
+	
+				case 'ArrowDown': end = start = value.length
+					break
+	
+				case 'ArrowLeft': if (start > 0) end = --start
+					break
+	
+				case 'ArrowRight': if (start < value.length) end = ++start
+					break
+			}
+
+
+			this.update({ end, start })
+		}
+
+	}
+	
+	mousedown({ target }) {
+		const start = target.selectionStart
+			, 	end = target.selectionEnd
+			,	value = target.value
+			, 	firstEmpty = this.getFirstEmptyChar(value)
+
+		setTimeout(() => {
+			this.update({ start: firstEmpty, end: firstEmpty })
+			target.setSelectionRange(firstEmpty, firstEmpty)
+		})
+	}
+
+	// 1. Разобратся со структурой, процесс кликов
+	
+	mouseup({ target }) {
+		const start = target.selectionStart
+			,	end = target.selectionEnd
+			,	value = target.value
+			,	{ min } = this._caret
+			, 	firstEmpty = this.getFirstEmptyChar(value)
+			
+		if (start !== end) {
+
+			if (start < min) {
+				this.update({ start: firstEmpty, end: firstEmpty })
+				target.setSelectionRange(firstEmpty, firstEmpty)
+			} else {
+				this.update({ start, end })
+				target.setSelectionRange(start, end)
+			}
+		} else {
+			this.update({ start: firstEmpty, end: firstEmpty })
+			target.setSelectionRange(firstEmpty, firstEmpty)
+		}
 	}
 
 	/**
@@ -212,13 +310,12 @@ export default class InputMask {
 		this._caret.end = end
 		this._caret.start = start
 		
-		
 		if (value !== undefined) {
 			
 			if (this.isMask) {
-				this.value = this.maskHandler(value)
+				this._value = this.maskHandler(value)
 			} else {
-				this.value = value
+				this._value = value
 			}
 			
 		}
@@ -252,14 +349,11 @@ export default class InputMask {
 
 		this.node.value = maskedValue
 
-		// if (start < min) {
-		// 	this.node.setSelectionRange(min, min)
-		// } else {
-		// 	this.node.setSelectionRange(start, end)
-		// }
-		
-		console.warn('phoneHandler: ', start, end)
-		this.node.setSelectionRange(start, end)
+		if (start < min) {
+			this.node.setSelectionRange(min, min)
+		} else {
+			this.node.setSelectionRange(start, end)
+		}
 		
 		return clearedValue
 	}
