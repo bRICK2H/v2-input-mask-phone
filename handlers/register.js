@@ -9,7 +9,9 @@ const EVENTS = [
 ]
 
 export default function(input) {
+	const listener = setEvent.bind(this)
+
 	for (const event of EVENTS) {
-		input.addEventListener(event, setEvent.bind(this, event))
+		input.addEventListener(event, listener)
 	}
 }

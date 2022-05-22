@@ -1,5 +1,5 @@
 <template>
-	<input class="input"
+	<!-- <input class="input"
 		type="text"
 		
 		:ref="inputRef"
@@ -11,10 +11,15 @@
 		@keydown="keydown($event)"
 		@dblclick="dblclick($event)"
 		@mousedown="mousedown($event)"
+	> -->
+	<input type="text"
+		id="im"
+		v-model="value"
 	>
 </template>
 
 <script>
+
 export default {
 	name: 'VInput',
 	props: {

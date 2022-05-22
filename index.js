@@ -3,7 +3,9 @@ import register from './handlers/register'
 export default class InputMask {
 
 	constructor({ el, mask, char }) {
+		console.log('ho')
 		this.initValue = ''
+		this.maskValue = ''
 		this._value = ''
 		this._caret = {
 			start: 0,
@@ -11,12 +13,11 @@ export default class InputMask {
 			min: null,
 			max: null,
 		}
-		
+
 		this.mask = mask
 		this.char = char
 		this.type = null
 		this.node = null
-		
 		this.isMask = this.isMaskUsed(mask, char)
 
 		this.enableHandlers(el)
@@ -31,8 +32,20 @@ export default class InputMask {
 	}
 
 	set value(val) {
-		this._value = val
+		if (val !== undefined) {
+
+			if (this.isMask) {
+				this._value = this.maskHandler(val)
+			} else {
+				this._value = val
+			}
+
+		}
 	}
+
+	// set value(val) {
+	// 	this._value = val
+	// }
 
 	/**
 	 * @param { String, Object (node) } el 
@@ -197,10 +210,23 @@ export default class InputMask {
 
 			this.node = node
 			this.initValue = value
-			this.update({ value })
+			console.log('init', value)
+			// this.update({ value })
+			this.value = value
 
 			register.call(this, node)
 		})
+
+		// setTimeout(() => {
+		// 	const node = this.getInput(el)
+		// 		, { value } = node
+
+		// 	this.node = node
+		// 	this.initValue = value
+		// 	this.update({ value })
+
+		// 	register.call(this, node)
+		// })
 	}
 
 	/**
@@ -208,20 +234,9 @@ export default class InputMask {
 	 * @param { Ojbect } { vlaue, start, end }
 	 */
 
-	update({ start = 0, end = 0, value }) {
+	update({ start = 0, end = 0 }) {
 		this._caret.end = end
 		this._caret.start = start
-		
-		
-		if (value !== undefined) {
-			
-			if (this.isMask) {
-				this.value = this.maskHandler(value)
-			} else {
-				this.value = value
-			}
-			
-		}
 	}
 
 	maskHandler(val) {
@@ -234,12 +249,17 @@ export default class InputMask {
 
 	phoneHandler(val) {
 		console.warn('phoneHandler')
-		const { start, end, min } = this._caret
 		const clearedValue = val
 			.replace(/\+7/, '')
 			.replace(/\D/g, '')
 
-		const arrayValue = clearedValue.split('')
+		this.node.value = this.maskValue = this.maskedValue(clearedValue)
+
+		return clearedValue
+	}
+
+	maskedValue(value) {
+		const arrayValue = value.split('')
 		const maskedValue = this.mask.split('')
 			.map(char => {
 				if (char === this.char) {
@@ -250,18 +270,7 @@ export default class InputMask {
 				return char
 			}).join('')
 
-		this.node.value = maskedValue
-
-		// if (start < min) {
-		// 	this.node.setSelectionRange(min, min)
-		// } else {
-		// 	this.node.setSelectionRange(start, end)
-		// }
-		
-		console.warn('phoneHandler: ', start, end)
-		this.node.setSelectionRange(start, end)
-		
-		return clearedValue
+		return maskedValue
 	}
 
 }
