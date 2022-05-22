@@ -181,8 +181,7 @@ export default function (event) {
 			break
 
 		case 'input': {
-			// Enable setter value
-			this.value = value
+			this.setValue(value)
 			const index = findInputIndex(this.maskValue, eStart, min, this.char)
 			
 			this.update({ start: index, end: index })

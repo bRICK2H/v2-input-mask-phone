@@ -32,15 +32,7 @@ export default class InputMask {
 	}
 
 	set value(val) {
-		if (val !== undefined) {
-
-			if (this.isMask) {
-				this._value = this.maskHandler(val)
-			} else {
-				this._value = val
-			}
-
-		}
+		this._valuel = val
 	}
 
 	// set value(val) {
@@ -210,23 +202,10 @@ export default class InputMask {
 
 			this.node = node
 			this.initValue = value
-			console.log('init', value)
-			// this.update({ value })
-			this.value = value
+			this.setValue(value)
 
 			register.call(this, node)
 		})
-
-		// setTimeout(() => {
-		// 	const node = this.getInput(el)
-		// 		, { value } = node
-
-		// 	this.node = node
-		// 	this.initValue = value
-		// 	this.update({ value })
-
-		// 	register.call(this, node)
-		// })
 	}
 
 	/**
@@ -239,17 +218,29 @@ export default class InputMask {
 		this._caret.start = start
 	}
 
-	maskHandler(val) {
+	setValue(value) {
+		if (value !== undefined) {
+
+			if (this.isMask) {
+				this.value = this.maskHandler(value)
+			} else {
+				this.value = value
+			}
+
+		}
+	}
+
+	maskHandler(value) {
 		switch (this.type) {
 			case 'phone': {
-				return this.phoneHandler(val)
+				return this.phoneHandler(value)
 			}
 		}
 	}
 
-	phoneHandler(val) {
+	phoneHandler(value) {
 		console.warn('phoneHandler')
-		const clearedValue = val
+		const clearedValue = value
 			.replace(/\+7/, '')
 			.replace(/\D/g, '')
 
