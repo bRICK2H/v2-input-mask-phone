@@ -1,4 +1,11 @@
+import {
+	findAllowedIndexNextStep,
+	findAllowedIndexPrevStep
+} from './helpers'
+
+
 import { dbclick } from './events/dblclick'
+import { mouseup } from './events/mouseup'
 
 const allowedNextStep = (value, pos, char) => {
 	return /\d/.test(value[pos]) && value[pos] !== char
@@ -8,44 +15,12 @@ const allowedPrevStep = (value, pos) => {
 	return /\d/.test(value[pos])
 }
 
-const findAllowedIndexNextStep = (value, pos, char) => {
-	return value.split('')
-		.findIndex((val, i) => i >= pos && /\d/.test(val) || val === char)
-}
-
-const findAllowedIndexPrevStep = (value, pos, min) => {
-	return value.split('')
-		.findLastIndex((val, i) => i > min && i < pos && /\d/.test(val))
-}
-
 const findAllowedIndexLastStep = (value, char) => {
 	const arrayValue = value.split('')
 
 	return value.indexOf(char) !== -1
 		? arrayValue.findIndex(val => val === char)
 		: arrayValue.findLastIndex(val => /\d/.test(val)) + 1
-}
-
-const findAllowedIndexFirstStep = (value, index, min, char) => {
-	const arrayValue = value.split('')
-		, 	firstChar = value.indexOf(char)
-		, 	firstDigit = arrayValue.findIndex((val, i) => {
-			return i >= min && i >= index - 1 && /\d/.test(val)
-		})
-		,	prevDigit = findAllowedIndexPrevStep(value, index, min)
-		,	nextDigit = findAllowedIndexNextStep(value, index, char)
-		,	offsetPrev = index - (prevDigit + 1)
-		, 	offsetNext = nextDigit - index
-
-	return index < min
-		? firstDigit !== -1
-			? firstDigit
-			: firstChar
-		: value[index] === char || value[index - 1] === char
-			? firstChar
-			: /\D/.test(value[index - 1]) && value[index - 1] !== char
-				? offsetPrev < offsetNext ? prevDigit + 1 : nextDigit
-				: index
 }
 
 const findInputIndex = (maskValue, start, min, char) => {
@@ -71,20 +46,6 @@ const findInputIndex = (maskValue, start, min, char) => {
 
 const is = {
 	backspace: false
-}
-
-const findAllowedIndexRangeSteps = (value, start, end, min, char) => {
-	const firstChar = value.indexOf(char)
-		, 	arrayValue = value.split('')
-		, 	getIndex = (val, i) => i >= min && i >= start && i < end && /\d/.test(val)
-		, 	firstDigit = arrayValue.findIndex((val, i) => getIndex(val, i))
-		, 	lastDigit = arrayValue.findLastIndex((val, i) => getIndex(val, i))
-
-	return firstDigit !== -1 && lastDigit !== -1
-		? [firstDigit, lastDigit + 1]
-		: start < min
-			? [min, min]
-			: [firstChar, firstChar]
 }
 
 export default function (event) {
@@ -167,20 +128,25 @@ export default function (event) {
 			break
 
 		case 'mouseup': {
-			if (eStart !== eEnd) {
-				const [
-					firstDigit,
-					lastDigit
-				] = findAllowedIndexRangeSteps(value, eStart, eEnd, min, this.char)
+			// if (eStart !== eEnd) {
+			// 	const [
+			// 		firstDigit,
+			// 		lastDigit
+			// 	] = findAllowedIndexRangeSteps(value, eStart, eEnd, min, this.char)
 
-				target.setSelectionRange(firstDigit, lastDigit)
-				this.update({ start: firstDigit, end: lastDigit })
-			} else {
-				const allowedIndex = findAllowedIndexFirstStep(value, eStart, min, this.char)
+			// 	target.setSelectionRange(firstDigit, lastDigit)
+			// 	this.update({ start: firstDigit, end: lastDigit })
+			// } else {
+			// 	const allowedIndex = findAllowedIndexFirstStep(value, eStart, min, this.char)
 				
-				target.setSelectionRange(allowedIndex, allowedIndex)
-				this.update({ start: allowedIndex, end: allowedIndex })
-			}
+			// 	target.setSelectionRange(allowedIndex, allowedIndex)
+			// 	this.update({ start: allowedIndex, end: allowedIndex })
+			// }
+
+			const [startIndex, endIndex] = mouseup(value, eStart, eEnd,  min, this.char)
+
+			this.update({ start: startIndex, end: endIndex })
+			target.setSelectionRange(startIndex, endIndex)
 			
 		}
 			break
