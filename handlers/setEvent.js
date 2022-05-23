@@ -1,3 +1,5 @@
+import { dbclick } from './events/dblclick'
+
 const allowedNextStep = (value, pos, char) => {
 	return /\d/.test(value[pos]) && value[pos] !== char
 }
@@ -93,8 +95,6 @@ export default function (event) {
 		, 	{ value, selectionStart: eStart, selectionEnd: eEnd } = target
 	console.log(type, code)
 
-	// console.log(target, this, target.value, target.selectionStart)
-
 	switch (type) {
 		case 'keydown': {
 			const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
@@ -158,7 +158,12 @@ export default function (event) {
 		}
 			break
 			
-		case 'mousedown': {}
+		case 'dblclick': {
+			const [startIndex, endIndex] = dbclick(value, min, this.char)
+
+			target.setSelectionRange(startIndex, endIndex)
+			this.update({ start: startIndex, end: endIndex })
+		}
 			break
 
 		case 'mouseup': {
@@ -189,7 +194,9 @@ export default function (event) {
 		}
 			break
 	
-		default: {}
+		default: {
+			this.update({ start, end })
+		}
 			break
 	}
 

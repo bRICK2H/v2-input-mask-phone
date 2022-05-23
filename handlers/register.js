@@ -5,6 +5,7 @@ const EVENTS = [
 	'keyup',
 	'keydown',
 	'mouseup',
+	'dblclick',
 	'mousedown',
 ]
 

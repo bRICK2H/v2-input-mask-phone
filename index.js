@@ -196,7 +196,7 @@ export default class InputMask {
 	 */
 	
 	enableHandlers(el) {
-		document.addEventListener('DOMContentLoaded', () => {
+		setTimeout(() => {
 			const node = this.getInput(el)
 				,	{ value } = node
 
@@ -206,6 +206,16 @@ export default class InputMask {
 
 			register.call(this, node)
 		})
+		// document.addEventListener('DOMContentLoaded', () => {
+		// 	const node = this.getInput(el)
+		// 		,	{ value } = node
+
+		// 	this.node = node
+		// 	this.initValue = value
+		// 	this.setValue(value)
+
+		// 	register.call(this, node)
+		// })
 	}
 
 	/**
