@@ -5,7 +5,7 @@ const findAllowedIndexNextStep = (value, pos, char) => {
 
 const findAllowedIndexPrevStep = (value, pos, min) => {
 	return value.split('')
-		.findLastIndex((val, i) => i > min && i < pos && /\d/.test(val))
+		.findLastIndex((val, i) => i >= min && i < pos && /\d/.test(val))
 }
 
 export {

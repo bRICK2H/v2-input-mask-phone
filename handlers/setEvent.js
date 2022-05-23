@@ -23,6 +23,18 @@ const findAllowedIndexLastStep = (value, char) => {
 		: arrayValue.findLastIndex(val => /\d/.test(val)) + 1
 }
 
+const findAllowedNextDigitIndex = ({ value, end, min, char }) => {
+	const arrayValue = value.split('')
+		, nextDigitIndex = arrayValue.findIndex((val, i) => i > end && /\d/.test(val))
+		, lastDigitIndex = arrayValue.findLastIndex((val, i) => i > min && /\d/.test(val))
+
+	return nextDigitIndex !== -1
+		? nextDigitIndex + 1
+		: lastDigitIndex !== -1
+			? lastDigitIndex + 1
+			: value.indexOf(char)
+}
+
 const findInputIndex = (maskValue, start, min, char) => {
 	const val = maskValue[start]
 		, valueArray = maskValue.split('')
@@ -45,7 +57,8 @@ const findInputIndex = (maskValue, start, min, char) => {
 }
 
 const is = {
-	backspace: false
+	shift: false,
+	backspace: false,
 }
 
 export default function (event) {
@@ -62,53 +75,96 @@ export default function (event) {
 				, isArrow = ARROWS.includes(code)
 
 			if (code === 'Backspace') is.backspace = true
+			if (['ShiftLeft', 'ShiftRight'].includes(code)) {
+				is.shift = true
+			}
 
 			if (isArrow) {
-
 				switch (code) {
 					case 'ArrowUp': {
-						end = start = min
+						if (is.shift) {
+							const endIndex = findAllowedIndexPrevStep(value, end, min)
+
+							start = findAllowedIndexNextStep(value, min, this.char)
+							end = endIndex !== -1 ? endIndex + 1 : end
+
+						} else {
+							end = start = min
+						}
 					}
 						break
 
 					case 'ArrowDown': {
-						end = start = findAllowedIndexLastStep(value, this.char)
+						if (is.shift) {
+							end = findAllowedNextDigitIndex({ value, end: max, char: this.char, min })
+							start = /\D/.test(value[start])
+								? findAllowedIndexNextStep(value, start, this.char)
+								: start
+						} else {
+							end = start = findAllowedIndexLastStep(value, this.char)
+						}
 					}
 						break
 
 					case 'ArrowLeft': {
-						const isAllowedPrevStep = allowedPrevStep(value, start - 1)
+						if (is.shift) {
+							const findAllowedLastDigitIndex = ({ value, min, max, char }) => {
+								const arrayValue = value.split('')
 
-						if (isAllowedPrevStep) {
-							if (start > min) end = --start
-						} else {
+								const lastDigitIndex = arrayValue.findLastIndex((val, i) => i >= min && i < max && /\d/.test(val))
+								return lastDigitIndex !== -1
+									? lastDigitIndex + 1
+									: min
+							}
+
 							const prevIndex = findAllowedIndexPrevStep(value, start, min)
-							end = start = prevIndex !== -1
-								? prevIndex + 1 : min
+							
+							start = prevIndex !== -1 ? prevIndex : min
+							end = /\D/.test(value[end - 1])
+								? findAllowedLastDigitIndex({ value, min, max: end })
+								: end
+						} else {
+							const isAllowedPrevStep = allowedPrevStep(value, start - 1)
+	
+							if (isAllowedPrevStep) {
+								if (start > min) end = --start
+							} else {
+								const prevIndex = findAllowedIndexPrevStep(value, start, min)
+								end = start = prevIndex !== -1
+									? prevIndex + 1 : min
+							}
 						}
 					}
 						break
 
 					case 'ArrowRight': {
-						const isAllowedNextStep = allowedNextStep(value, start, this.char)
-						
-						if (isAllowedNextStep) {
-							if (start < max) end = ++start
+						if (is.shift) {
+							end = /\D/.test(value[end]) || value[end] === this.char
+								? findAllowedNextDigitIndex({ value, end, char: this.char, min })
+								: ++end
 						} else {
-							const nextIndex = findAllowedIndexNextStep(value, start, this.char)
-							end = start = nextIndex !== -1
-								? nextIndex : max
+							if (start !== end) {
+								end = start = end
+							} else {
+								const isAllowedNextStep = allowedNextStep(value, start, this.char)
+		
+								if (isAllowedNextStep) {
+									if (start < max) end = ++start
+								} else {
+									const nextIndex = findAllowedIndexNextStep(value, start, this.char)
+									end = start = nextIndex !== -1
+										? nextIndex : max
+								}
+							}
 						}
 					}
 						break
 				}
-				
-				// !Только при нажатии на стрелки, ctrl && shift обрабатывать немного иначе
+
 				event.preventDefault()
 				this.update({ end, start })
 				target.setSelectionRange(start, end)
 			}
-			
 			
 		}
 			
@@ -116,6 +172,9 @@ export default function (event) {
 
 		case 'keyup': {
 			if (code === 'Backspace') is.backspace = false
+			if (['ShiftLeft', 'ShiftRight'].includes(code)) {
+				is.shift = false
+			}
 		}
 			break
 			
@@ -128,21 +187,6 @@ export default function (event) {
 			break
 
 		case 'mouseup': {
-			// if (eStart !== eEnd) {
-			// 	const [
-			// 		firstDigit,
-			// 		lastDigit
-			// 	] = findAllowedIndexRangeSteps(value, eStart, eEnd, min, this.char)
-
-			// 	target.setSelectionRange(firstDigit, lastDigit)
-			// 	this.update({ start: firstDigit, end: lastDigit })
-			// } else {
-			// 	const allowedIndex = findAllowedIndexFirstStep(value, eStart, min, this.char)
-				
-			// 	target.setSelectionRange(allowedIndex, allowedIndex)
-			// 	this.update({ start: allowedIndex, end: allowedIndex })
-			// }
-
 			const [startIndex, endIndex] = mouseup(value, eStart, eEnd,  min, this.char)
 
 			this.update({ start: startIndex, end: endIndex })
